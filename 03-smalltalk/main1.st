@@ -1,5 +1,17 @@
 #!/usr/bin/gst -f
-digits := ((stdin nextLine) asArray) collect: [ :c | (c = $1) ifTrue: [ 1 ] ifFalse: [ 0 ]].
+Boolean extend [
+  asInteger [
+    ^self ifTrue: [ 1 ] ifFalse: [ 0 ]
+  ]
+].
+
+Array extend [
+  binaryToInt [
+    ^self fold: [ :acc :n | acc * 2 + n ]
+  ]
+].
+
+digits := ((stdin nextLine) asArray) collect: [ :c | (c = $1) asInteger ].
 count := 1.
 stdin linesDo: [ :line |
   line doWithIndex: [ :c :i |
@@ -8,9 +20,8 @@ stdin linesDo: [ :line |
   count := count + 1.
 ].
 limit := (count / 2) floor.
-gammaRateBits := digits collect: [ :n | (n > limit) ifTrue: [ 1 ] ifFalse: [ 0 ]].
-epsilonRateBits := gammaRateBits collect: [ :n | (n = 1) ifTrue: [ 0 ] ifFalse: [ 1 ]].
+gammaRate := digits collect: [ :n | (n > limit) asInteger ].
+epsilonRate := gammaRate collect: [ :n | (n ~= 1) asInteger ].
 
-gammaRate := gammaRateBits fold: [ :acc :n | acc * 2 + n ].
-epsilonRate := epsilonRateBits fold: [ :acc :n | acc * 2 + n ].
-Transcript nextPutAll: (gammaRate * epsilonRate) asString; cr.
+result := gammaRate binaryToInt * epsilonRate binaryToInt.
+Transcript nextPutAll: result asString; cr.
