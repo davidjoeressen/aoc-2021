@@ -3,4 +3,4 @@
 ## Run
 
 - Install Smalltalk
-- `$ ./main1.pl <input` for the first star and `$ ./main2.pl <input` for the second star.
+- `$ make`

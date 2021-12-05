@@ -12,10 +12,15 @@ Array extend [
 ].
 
 OrderedCollection extend [
-  oxygenSelectBlock: index [
-    | oxygenDigit n |
+  mostCommonAt: index [
+    | n |
     n := (self count: [ :x | (x at: index) = 1 ]).
-    oxygenDigit := (n >= (self size / 2) ceiling) asInteger.
+    ^(n >= (self size / 2) ceiling) asInteger.
+  ]
+
+  oxygenSelectBlock: index [
+    | oxygenDigit |
+    oxygenDigit := self mostCommonAt: index.
     ^[ :r | (r at: index) = oxygenDigit ].
   ]
 
@@ -35,8 +40,13 @@ OrderedCollection extend [
 lines := OrderedCollection new.
 stdin linesDo: [ :line | lines add: ((line asArray) collect: [ :c | (c = $1) asInteger ]) ].
 
+gamma := 1 to: ((lines at: 1) size) collect: [ :n | lines mostCommonAt: n ].
+epsilon := gamma collect: [ :n | (n ~= 1) asInteger ].
+result1 := gamma binaryToInt * epsilon binaryToInt.
+
 oxygen := lines selectMostCommonOn: 1.
 scrubber := lines selectLeastCommonOn: 1.
+result2 := oxygen binaryToInt * scrubber binaryToInt.
 
-result := oxygen binaryToInt * scrubber binaryToInt.
-Transcript nextPutAll: result asString; cr.
+Transcript nextPutAll: 'Part 1: '; nextPutAll: result1 asString; cr.
+Transcript nextPutAll: 'Part 2: '; nextPutAll: result2 asString; cr.
