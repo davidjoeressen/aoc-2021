@@ -3,4 +3,4 @@
 ## Run
 
 - Install Prolog
-- `$ swipl main1.pl <input` for the first star and `$ swipl main2.pl <input` for the second star.
+- `$ make`
