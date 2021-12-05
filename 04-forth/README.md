@@ -3,4 +3,4 @@
 ## Run
 
 - Install Gforth
-- `$ gforth main.fs -e 'part1' <input` for the first star and `$ gforth main.fs -e 'part2' <input` for the second star.
+- `$ make`

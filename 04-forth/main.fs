@@ -8,7 +8,9 @@ variable numbers 100 cells allot
 
 variable number-count
 variable fastest
-variable score
+variable fastest-score
+variable slowest
+variable slowest-score
 
 : of-arr ( n n -- n ) cells + ;
 
@@ -57,11 +59,16 @@ variable score
   until
   numbers over of-arr @ get-score ;
 
-: update-score { turn new-score part1 -- }
-  turn fastest @ part1 if < else > endif
+: update-score { turn new-score -- }
+  turn fastest @ <
   if
     turn fastest !
-    new-score score !
+    new-score fastest-score !
+  endif
+  turn slowest @ >
+  if
+    turn slowest !
+    new-score slowest-score !
   endif ;
 
 \ input functions
@@ -112,19 +119,19 @@ variable score
     loop
   loop ;
 
-: main { file part1 -- }
-  file read-numbers
-  part1 if number-count @ else 0 endif fastest !
+: main ( -- )
+  stdin read-numbers
+  number-count @ fastest !
+  0 slowest !
   begin
-    line-buffer max-line file read-line throw
+    line-buffer max-line stdin read-line throw
   while
     drop
-    file read-board
+    stdin read-board
     process-board
-    part1 update-score
+    update-score
   repeat
   drop
-  score ? ;
-
-: part1 ( -- ) stdin 1 main bye ;
-: part2 ( -- ) stdin 0 main bye ;
+  ." Part 1: " fastest-score ? cr
+  ." Part 2: " slowest-score ? cr
+  bye ;
