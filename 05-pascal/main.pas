@@ -5,102 +5,132 @@ uses
   Classes, Sysutils, StrUtils, Types, Math;
 const
   BOARD_SIZE = 999;
+  MAX_NUM_INSTRUCTIONS = 500;
 type
-  coords = record
+  Coords = record
     x1, y1, x2, y2: integer;
   end;
-  LineProcessor = class
+
+  Board = class
   private
     board: array[0..BOARD_SIZE] of array[0..BOARD_SIZE] of integer;
-    function ParseLine(const s: string): coords;
-    procedure AddLine(c: coords);
   public
-    checkDiagonals: boolean;
     constructor Create();
-    procedure ProcessLine(const s: AnsiString);
+    procedure AddLine(c: Coords);
     function CountIntersections(): integer;
   end;
 
-constructor LineProcessor.Create();
+  Instructions = class
+  private
+    orthogonalInstructions: array[0..MAX_NUM_INSTRUCTIONS] of Coords;
+    numOrthogonalInstructions: integer;
+    diagonalInstructions: array[0..MAX_NUM_INSTRUCTIONS] of Coords;
+    numDiagonalInstructions: integer;
+  public
+    constructor Create();
+    procedure ParseInstruction(const s: AnsiString);
+    procedure ExecuteOrthogonalInstructions(b: Board);
+    procedure ExecuteDiagonalInstructions(b: Board);
+  end;
+
+constructor Board.Create();
 var
   x,y: integer;
 begin
-  checkDiagonals := false;
   for x := 0 to BOARD_SIZE do
     for y := 0 to BOARD_SIZE do
       board[x,y] := 0;
 end;
 
-function LineProcessor.ParseLine(const s: string): coords;
+procedure Board.AddLine(c: Coords);
 var
+  x, y, xdir, ydir: integer;
+begin
+  xdir := Sign(c.x2 - c.x1);
+  ydir := Sign(c.y2 - c.y1);
+  x := c.x1;
+  y := c.y1;
+  repeat
+    board[x,y] := board[x,y] + 1;
+    if (x = c.x2) and (y = c.y2) then break;
+    x := x + xdir;
+    y := y + ydir;
+  until false;
+end;
+
+function Board.CountIntersections(): integer;
+var
+  x, y: integer;
+begin
+  result := 0;
+  for x := 0 to BOARD_SIZE do
+    for y := 0 to BOARD_SIZE do
+      if board[x,y] > 1 then
+        result := result + 1;
+end;
+
+constructor Instructions.Create();
+begin
+  numOrthogonalInstructions := -1;
+  numDiagonalInstructions := -1;
+end;
+
+procedure Instructions.ParseInstruction(const s: AnsiString);
+var
+  c: Coords;
   split1, split2: TStringDynArray;
 begin
   split1 := SplitString(s, ' -> ');
   split2 := SplitString(split1[0], ',');
-  parseLine.x1 := StrToInt(split2[0]);
-  parseLine.y1 := StrToInt(split2[1]);
+  c.x1 := StrToInt(split2[0]);
+  c.y1 := StrToInt(split2[1]);
   split2 := SplitString(split1[1], ',');
-  parseLine.x2 := StrToInt(split2[0]);
-  parseLine.y2 := StrToInt(split2[1]);
-end;
-
-procedure LineProcessor.AddLine(c: coords);
-var
-  x, y, xdir, ydir: integer;
-  isDiagonal: boolean;
-begin
-  xdir := Sign(c.x2 - c.x1);
-  ydir := Sign(c.y2 - c.y1);
-  isDiagonal := (xdir <> 0) and (ydir <> 0);
-  if checkDiagonals or not isDiagonal then
+  c.x2 := StrToInt(split2[0]);
+  c.y2 := StrToInt(split2[1]);
+  if (c.x1 <> c.x2) and (c.y1 <> c.y2) then
   begin
-    x := c.x1;
-    y := c.y1;
-    repeat
-      board[x,y] := board[x,y] + 1;
-      x := x + xdir;
-      y := y + ydir;
-    until (x = c.x2) and (y = c.y2);
-    board[c.x2,c.y2] := board[c.x2,c.y2] + 1;
+    numDiagonalInstructions := numDiagonalInstructions + 1;
+    diagonalInstructions[numDiagonalInstructions] := c;
+  end else begin
+    numOrthogonalInstructions := numOrthogonalInstructions + 1;
+    orthogonalInstructions[numOrthogonalInstructions] := c;
   end;
 end;
 
-procedure LineProcessor.ProcessLine(const s: AnsiString);
+procedure Instructions.ExecuteOrthogonalInstructions(b: Board);
+var
+  i: integer;
 begin
-  AddLine(ParseLine(s));
+  for i := 0 to numOrthogonalInstructions do
+    b.AddLine(orthogonalInstructions[i]);
 end;
 
-function LineProcessor.CountIntersections(): integer;
+procedure Instructions.ExecuteDiagonalInstructions(b: Board);
 var
-  out, x, y: integer;
+  i: integer;
 begin
-  out := 0;
-  for x := 0 to BOARD_SIZE do
-    for y := 0 to BOARD_SIZE do
-      if board[x,y] > 1 then
-        out := out + 1;
-  CountIntersections := out;
+  for i := 0 to numDiagonalInstructions do
+    b.AddLine(diagonalInstructions[i]);
 end;
 
 var
   sl: TStringList;
-  lp: LineProcessor;
+  b: Board;
+  i: Instructions;
 begin
   if (ParamCount = 1) and FileExists(ParamStr(1)) then
   begin
     sl := TStringList.Create;
+    i := Instructions.Create;
+    b := Board.Create;
+
     sl.LoadFromFile(ParamStr(1));
+    sl.forEach(@i.ParseInstruction);
 
-    // Part 1
-    lp := LineProcessor.Create;
-    sl.forEach(@lp.processLine);
-    writeln('Part 1: ',lp.CountIntersections());
-
-    // Part 2
-    lp := LineProcessor.Create;
-    lp.checkDiagonals := true;
-    sl.forEach(@lp.processLine);
-    writeln('Part 2: ',lp.CountIntersections());
+    i.ExecuteOrthogonalInstructions(b);
+    writeln('Part 1: ',b.CountIntersections());
+    i.ExecuteDiagonalInstructions(b);
+    writeln('Part 2: ',b.CountIntersections());
 
     sl.Free;
   end else writeln('use: main <infile>');
