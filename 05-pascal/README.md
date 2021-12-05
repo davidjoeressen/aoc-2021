@@ -3,4 +3,4 @@
 ## Run
 
 - Install free pascal
-- `$ make test`
+- `$ make`
