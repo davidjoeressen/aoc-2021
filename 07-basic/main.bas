@@ -1,3 +1,4 @@
+'' quicksort from https://rosettacode.org/wiki/Sorting_algorithms/Quicksort#FreeBASIC
 sub quicksort(a() as integer, first as integer, last as integer)
   dim length as integer = last - first + 1
   if length < 2 then return
