@@ -2,13 +2,12 @@ with Ada.Text_Io;
 use Ada.Text_Io;
 with Ada.Command_line;
 use Ada.Command_line;
-with Ada.Containers;
-use Ada.Containers;
 
 procedure Main is
-  type Digit is range 0..9;
   type Board is array(Positive range <>, Positive range <>) of Integer;
-  type Coord is array(1..2) of Integer;
+  type Coord is record
+    X, Y : Integer;
+  end record;
   type Coord_List is array(Positive range <>) of Coord;
   Type Int_Array is array(Positive range <>) of Integer;
 
@@ -27,10 +26,10 @@ procedure Main is
       begin
         N := N + 1;
         M := 0;
-        for index of Line loop
-          if index in '0' .. '9' then
+        for Char of Line loop
+          if Char in '0' .. '9' then
             M := M + 1;
-            TmpBoard(N, M) := Character'Pos(index) - Character'Pos('0');
+            TmpBoard(N, M) := Character'Pos(Char) - Character'Pos('0');
           end if;
         end loop;
       end;
@@ -39,9 +38,9 @@ procedure Main is
     declare
       B: Board(1..N,1..M);
     begin
-      for x in 1..N loop
-        for y in 1..M loop
-          B(x,y) := TmpBoard(x,y);
+      for X in 1..N loop
+        for Y in 1..M loop
+          B(X,Y) := TmpBoard(X,Y);
         end loop;
       end loop;
       return B;
@@ -90,16 +89,15 @@ procedure Main is
     Coords(1) := Start;
     while Current_Coord <= Num_Coords loop
       declare
-        X : Integer := Coords(Current_Coord)(1);
-        Y : Integer := Coords(Current_Coord)(2);
-        E : Integer := B(X, Y);
-        Neighbours : Coord_List(1..4) := ((X-1,Y),(X+1,Y),(X,Y-1),(X,Y+1));
+        C : Coord := Coords(Current_Coord);
+        E : Integer := B(C.X, C.Y);
+        Neighbours : Coord_List(1..4) := ((C.X-1,C.Y),(C.X+1,C.Y),(C.X,C.Y-1),(C.X,C.Y+1));
       begin
         for N of Neighbours loop
-          if N(1) in B'Range(1) and then
-            N(2) in B'Range(2) and then
-            B(N(1),N(2)) < 9 and then
-            B(N(1),N(2)) > E and then
+          if N.X in B'Range(1) and then
+            N.Y in B'Range(2) and then
+            B(N.X,N.Y) < 9 and then
+            B(N.X,N.Y) > E and then
             not Element(Coords(1..Num_Coords), N) then
             Num_Coords := Num_Coords + 1;
             Coords(Num_Coords) := N;
@@ -110,16 +108,14 @@ procedure Main is
     end loop;
     for C of Coords(1..Num_Coords) loop
       declare
-        e : Integer := B(C(1), C(2));
-        x : Integer := C(1);
-        y : Integer := C(2);
-        Neighbours : Coord_List(1..4) := ((x-1,y),(x+1,y),(x,y-1),(x,y+1));
+        E : Integer := B(C.X, C.Y);
+        Neighbours : Coord_List(1..4) := ((C.X-1,C.Y),(C.X+1,C.Y),(C.X,C.Y-1),(C.X,C.Y+1));
         valid : Boolean := True;
       begin
         for Neighbour of Neighbours loop
-          if Neighbour(1) in B'Range(1) and then
-            Neighbour(2) in B'Range(2) and then
-            B(Neighbour(1),Neighbour(2)) < e and then
+          if Neighbour.X in B'Range(1) and then
+            Neighbour.Y in B'Range(2) and then
+            B(Neighbour.X,Neighbour.Y) < E and then
             not Element(Coords(1..Num_Coords), Neighbour) then
             valid := false;
           end if;
@@ -153,12 +149,12 @@ procedure Main is
   end;
 
   function Calculate_Part1(B : Board; Low_Points : Coord_List) return Integer is
-    sum : Integer := 0;
+    Sum : Integer := 0;
   begin
-    for x of Low_Points loop
-      sum := sum + B(x(1),x(2)) + 1;
+    for C of Low_Points loop
+      Sum := Sum + B(C.X,C.Y) + 1;
     end loop;
-    return sum;
+    return Sum;
   end Calculate_Part1;
 
   function Calculate_Part2(B : Board; Low_Points : Coord_List) return Integer is
