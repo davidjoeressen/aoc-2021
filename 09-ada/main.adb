@@ -14,12 +14,11 @@ procedure Main is
   function Read_File(File_Name : String) return Board is
     Input : File_Type;
     TmpBoard : Board(1..1000,1..1000);
-    N, M : Integer;
+    N, M : Integer := 0;
   begin
     Open (File => Input,
           Mode => In_File,
           Name => File_Name);
-    N := 0;
     while not End_Of_File(Input) loop
       declare
         Line : String := Get_Line (Input);
@@ -47,23 +46,39 @@ procedure Main is
     end;
   end Read_File;
 
+  function Get_Neighbours(C : Coord) return Coord_List is
+    Neighbours : Coord_List(1..4) := ((C.X-1,C.Y),(C.X+1,C.Y),(C.X,C.Y-1),(C.X,C.Y+1));
+  begin
+    return Neighbours;
+  end Get_Neighbours;
+
+  function Get_Or_Else(B : Board; C : Coord; N : Integer) return Integer is
+  begin
+    if C.X in B'Range(1) and C.Y in B'Range(2) then
+      return B(C.X,C.Y);
+    end if;
+    return N;
+  end Get_Or_Else;
+
   function Find_Low_Points(B : Board) return Coord_List is
     Low_Points : Coord_List(1..200);
     N : Integer := 0;
   begin
-    for x in B'Range(1) loop
-      for y in B'Range(2) loop
+    for X in B'Range(1) loop
+      for Y in B'Range(2) loop
         declare
-          e : Integer := B(x,y);
-          l,r,u,d : Boolean;
+          E : Integer := B(X,Y);
+          Neighbours : Coord_List := Get_Neighbours((X,Y));
+          Is_Low_Point : Boolean := True;
         begin
-          u := x = 1 or else B(x-1,y) > e;
-          d := x = B'Length(1) or else B(x+1,y) > e;
-          l := y = 1 or else B(x,y-1) > e;
-          r := y = B'Length(2) or else B(x,y+1) > e;
-          if u and d and l and r then
+          for Neighbour of Neighbours loop
+            if Get_Or_Else(B, Neighbour, 10) <= E then
+              Is_Low_Point := false;
+            end if;
+          end loop;
+          if Is_Low_Point then
             N := N + 1;
-            Low_Points(N) := (x,y);
+            Low_Points(N) := (X,Y);
           end if;
         end;
       end loop;
@@ -91,13 +106,10 @@ procedure Main is
       declare
         C : Coord := Coords(Current_Coord);
         E : Integer := B(C.X, C.Y);
-        Neighbours : Coord_List(1..4) := ((C.X-1,C.Y),(C.X+1,C.Y),(C.X,C.Y-1),(C.X,C.Y+1));
+        Neighbours : Coord_List := Get_Neighbours(C);
       begin
         for N of Neighbours loop
-          if N.X in B'Range(1) and then
-            N.Y in B'Range(2) and then
-            B(N.X,N.Y) < 9 and then
-            B(N.X,N.Y) > E and then
+          if Get_Or_Else(B, N, 9) in (E+1) .. 8 and then
             not Element(Coords(1..Num_Coords), N) then
             Num_Coords := Num_Coords + 1;
             Coords(Num_Coords) := N;
@@ -109,13 +121,11 @@ procedure Main is
     for C of Coords(1..Num_Coords) loop
       declare
         E : Integer := B(C.X, C.Y);
-        Neighbours : Coord_List(1..4) := ((C.X-1,C.Y),(C.X+1,C.Y),(C.X,C.Y-1),(C.X,C.Y+1));
+        Neighbours : Coord_List := Get_Neighbours(C);
         valid : Boolean := True;
       begin
         for Neighbour of Neighbours loop
-          if Neighbour.X in B'Range(1) and then
-            Neighbour.Y in B'Range(2) and then
-            B(Neighbour.X,Neighbour.Y) < E and then
+          if Get_Or_Else(B, Neighbour, 10) < E and then
             not Element(Coords(1..Num_Coords), Neighbour) then
             valid := false;
           end if;
@@ -167,7 +177,6 @@ procedure Main is
     Biggest := Biggest_Three(Basin_Sizes);
     return Biggest(1) * Biggest(2) * Biggest(3);
   end Calculate_Part2;
-
 begin
   if Argument_Count < 1 then
     Put_Line("Usage: " & Command_Name & " <file>");
