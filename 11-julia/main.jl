@@ -1,50 +1,40 @@
-function neighbours(x::CartesianIndex, y::Matrix{Int64})
+function getNeighbours(x::CartesianIndex, y::Matrix{Int64})
   indices = CartesianIndices(y)
   max(first(indices), x-oneunit(x)):min(last(indices), x+oneunit(x))
 end
 
-function glow(x::Matrix{Int64}, n::Int64)
-  glows = findall(x -> x >= 9, x)
-  if isempty(glows)
-    (x, n)
-  else
-    x[glows] .= -1
-    for i in Iterators.flatten(map(a -> neighbours(a, x), glows))
-      if x[i] >= 0
-        x[i] += 1
-      end
-    end
-    glow(x, n+length(glows))
-  end
-end
-
 function next(x::Matrix{Int64})
-  (x, n) = glow(copy(x), 0)
+  n = 0
+  while (glows = findall(a -> a >= 9, x); !isempty(glows))
+    x[glows] .= -1
+    for g in glows
+      neighbours = filter(a -> x[a] >= 0, getNeighbours(g, x))
+      x[neighbours] .+= 1
+    end
+    n += length(glows)
+  end
   (x .+ 1, n)
 end
 
 function calc(x::Matrix{Int64})
   z = copy(x)
   numFlashes = 0
-  allFlashed = 0
-  for i in 1:1000
-    (z,m) = next(z)
-    if i <= 100
+  allFlashed = 1
+  while ((z,m) = next(z); m != length(z))
+    if allFlashed <= 100
       numFlashes += m
     end
-    if m == 100
-      allFlashed = i
-      break
-    end
+    allFlashed += 1
   end
   return (numFlashes, allFlashed)
 end
+
+parse_input(input::String) = reshape(map(x -> parse(Int, x), collect(filter(isdigit, input))), (10, 10))
 
 if length(ARGS) < 1
   println("Usage: ", Base.basename(Base.source_path()), " <filename>")
   exit(1)
 end
-input = reshape(map(x -> parse(Int,x), collect(filter(isdigit, read(ARGS[1], String)))), (10,10))
-(part1, part2) = calc(input)
-println("Part 1: ",part1)
-println("Part 2: ",part2)
+(part1, part2) = read(ARGS[1], String) |> parse_input |> calc
+println("Part 1: ", part1)
+println("Part 2: ", part2)
