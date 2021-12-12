@@ -61,7 +61,7 @@
         (not (contains? (cdr path) last)))))
 
 (define (valid-path2? path)
-  (let loop ((caves (filter (compose not big-cave?) path))
+  (let loop ((caves path)
              (visited-twice #f))
     (or (null? caves)
         (if (contains? (cdr caves) (car caves))
@@ -76,10 +76,16 @@
   (let ((last (car path)))
     (map (lambda (x) (cons x path)) (next-elements edges last))))
 
+(define (minimize path)
+  (cons (car path)
+        (if (big-cave? (cadr path))
+          (cddr path)
+          (cdr path))))
+
 (define (find-paths f edges)
   (let loop ((paths '(("start")))
              (found '()))
-    (let* ((next-paths (filter f (apply append (map (lambda (x) (next edges x)) paths))))
+    (let* ((next-paths (filter f (map minimize (apply append (map (lambda (x) (next edges x)) paths)))))
            (part (partition done? next-paths))
            (found2 (append (car part) found)))
       (if (null? (cdr part))
