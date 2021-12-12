@@ -61,12 +61,14 @@
     (or (big-cave? last)
         (not (contains? (cdr path) last)))))
 
-; TODO (David): increase efficiency
 (define (valid-path2? path)
-  (let ((last (car path)))
-    (or (valid-path? path)
-        (let ((sc (filter (compose not big-cave?) path)))
-          (>= 2 (length (filter (lambda (x) (< 1 x)) (map (lambda (x) (count sc x)) sc))))))))
+  (let loop ((caves (filter (compose not big-cave?) path))
+             (visited-twice #f))
+    (or (null? caves)
+        (if (contains? (cdr caves) (car caves))
+          (and (not visited-twice)
+               (loop (cdr caves) #t))
+          (loop (cdr caves) visited-twice)))))
 
 (define (done? path)
   (equal? "end" (car path)))
