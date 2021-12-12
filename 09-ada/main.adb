@@ -118,24 +118,7 @@ procedure Main is
         Current_Coord := Current_Coord + 1;
       end;
     end loop;
-    for C of Coords(1..Num_Coords) loop
-      declare
-        E : Integer := B(C.X, C.Y);
-        Neighbours : Coord_List := Get_Neighbours(C);
-        valid : Boolean := True;
-      begin
-        for Neighbour of Neighbours loop
-          if Get_Or_Else(B, Neighbour, 10) < E and then
-            not Element(Coords(1..Num_Coords), Neighbour) then
-            valid := false;
-          end if;
-        end loop;
-        if valid then
-          Basin_Size := Basin_Size + 1;
-        end if;
-      end;
-    end loop;
-    return Basin_Size;
+    return Num_Coords;
   end Get_Basin_Size;
 
   function Biggest_Three(L : Int_Array) return Int_Array is
