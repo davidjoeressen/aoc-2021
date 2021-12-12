@@ -52,9 +52,8 @@
 (define (next-elements edges element)
   (map cdr (filter (lambda (x) (equal? (car x) element)) edges)))
 
-; TODO (David): only look at first char
 (define (big-cave? cave)
-  (equal? cave (string-upcase cave)))
+  (char-upper-case? (string-ref cave 0)))
 
 (define (valid-path? path)
   (let ((last (car path)))
@@ -81,10 +80,11 @@
   (let loop ((paths '(("start")))
              (found '()))
     (let* ((next-paths (filter f (apply append (map (lambda (x) (next edges x)) paths))))
-           (part (partition done? next-paths)))
+           (part (partition done? next-paths))
+           (found2 (append (car part) found)))
       (if (null? (cdr part))
-        (append (car part) found)
-        (loop (cdr part) (append (car part) found))))))
+        found2
+        (loop (cdr part) found2)))))
 
 (define (part1 dict)
   (length (find-paths valid-path? dict)))
