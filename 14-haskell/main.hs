@@ -4,27 +4,29 @@ import Data.List
 import Data.Function
 import System.Environment (getArgs)
 import System.IO
+import qualified Data.Map as M
+import Data.Map (Map)
 
-data Counts a = Counts { getCounts :: [(a,Int)] } deriving Show
+data Counts a = Counts { getCounts :: Map a Int } deriving Show
 
 instance (Ord a) => Semigroup (Counts a) where
-  (Counts x)<>(Counts y) = Counts $ combineCounts (x++y)
+  (Counts x)<>(Counts y) = Counts $ M.unionWith (+) x y
 
 instance (Ord a) => Monoid (Counts a) where
-  mempty = Counts []
+  mempty = Counts M.empty
 
-combineCounts :: (Ord a) => [(a,Int)] -> [(a,Int)]
-combineCounts = map ((,)<$>fst.head<*>sum.map snd) . groupBy ((==)`on`fst) . sort
+type Substitutions = Map String Char
+
+combineCounts :: (Ord a) => [(a,Int)] -> Counts a
+combineCounts = Counts . M.fromListWith (+)
 
 prepareStart :: String -> (Counts Char, Counts String)
 prepareStart xs = (count $ init $ tail xs, count $ chunk xs)
 
 count :: (Ord a) => [a] -> Counts a
-count = Counts . map ((,)<$>head<*>length) . group . sort
+count = combineCounts . map (,1)
 
-type Substitution = (String, Char)
-
-parse :: String -> Substitution
+parse :: String -> (String, Char)
 parse x = (take 2 x,last x)
 
 chunk :: [a] -> [[a]]
@@ -32,27 +34,29 @@ chunk xs
   | length xs > 1 = take 2 xs:chunk (tail xs)
   | otherwise = []
 
-applyOne :: [Substitution] -> (String,Int) -> ((Char,Int),Counts String)
-applyOne s (x,n) = ((c,n), Counts $ map (,n) [[head x,c],c:tail x])
-  where c = fromJust $ lookup x s
+lookup' s = fromJust . flip M.lookup s
 
-apply :: [Substitution] -> Counts String -> (Counts Char,Counts String)
-apply s (Counts cs) = (Counts charcount, strcount)
-  where (charcount, strcount) = fmap mconcat $ unzip $ map (applyOne s) cs
+applyOne :: Substitutions -> (String,Int) -> Counts String
+applyOne s (x@[a,b],n) = let c = lookup' s x in combineCounts $ map (,n) [[a,c],[c,b]]
 
-expand :: (Ord a) => [([a],Int)] -> [(a,Int)]
-expand = combineCounts . concatMap (\([a,b],n) -> [(a,n),(b,n)])
+apply :: Substitutions -> Counts String -> (Counts Char,Counts String)
+apply s (Counts cs) = (charcount, strcount)
+  where strcount = mconcat $ map (applyOne s) $ M.assocs cs
+        charcount = Counts $ M.mapKeysWith (+) (lookup' s) cs
+
+expand :: (Ord a) => Counts [a] -> Counts a
+expand (Counts xs) = Counts (M.mapKeysWith (+) head xs) <> Counts (M.mapKeysWith (+) last xs)
 
 calc :: (Counts Char,Counts String) -> Int
-calc (Counts cs, Counts ss) = maximum cs' - minimum cs'
-  where cs' = map snd $ combineCounts (map (fmap (*(-1))) cs++expand ss)
+calc (Counts xs, ys) = maximum counts - minimum counts
+  where counts = M.elems $ getCounts $ Counts (fmap (*(-1)) xs)<>expand ys
 
 main = do
   file <- head <$> getArgs
   handle <- openFile file ReadMode
   start <- prepareStart <$> hGetLine handle
   hGetLine handle
-  subst <- map parse . lines <$> hGetContents handle
+  subst <- M.fromList . map parse . lines <$> hGetContents handle
   let [part1,part2] = map calc $ flip map [10,40] $ (!!) $ iterate (apply subst =<<) start
   putStrLn $ "Part 1: " ++ show part1
   putStrLn $ "Part 2: " ++ show part2
