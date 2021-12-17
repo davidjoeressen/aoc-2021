@@ -65,14 +65,14 @@ contains
     implicit none
     type(coord), intent(in) :: c
     type(coord) :: cs(4)
-    cs(1)%x = c%x - 1
-    cs(1)%y = c%y
-    cs(2)%x = c%x + 1
-    cs(2)%y = c%y
-    cs(3)%x = c%x
-    cs(3)%y = c%y - 1
-    cs(4)%x = c%x
-    cs(4)%y = c%y + 1
+    integer :: i
+    do i=1,size(cs)
+      cs(i) = c
+    end do
+    cs(1)%x = cs(1)%x - 1
+    cs(2)%x = cs(2)%x + 1
+    cs(3)%y = cs(3)%y - 1
+    cs(4)%y = cs(4)%y + 1
   end function neighbours
 
   subroutine init(q)
@@ -95,29 +95,22 @@ contains
     type(queue), intent(inout) :: q
     integer, intent(in) :: i
     integer :: j, k
-    integer :: p1,p2
+    integer :: p
 
     j = i
     k = j * 2
     do while (k <= q%last)
-      k = j * 2
-      p1 = q%heap(k)%priority
-      if (k+1 <= q%last) then
-        p2 = q%heap(k+1)%priority
-      else
-        p2 = 1000000
+      p = q%heap(k)%priority
+      if (k < q%last .and. q%heap(k+1)%priority < p) then
+        k = k + 1
+        p = q%heap(k+1)%priority
       end if
-      if (q%heap(j)%priority > p1 .or. q%heap(j)%priority > p2) then
-        if (p1 < p2) then
-          call swap(q,j,k)
-          j = k
-        else
-          call swap(q,j,k+1)
-          j = k+1
-        end if
-      else
+      if (q%heap(j)%priority <= p) then
         exit
       end if
+      call swap(q,j,k)
+      j = k
+      k = j * 2
     end do
   end subroutine sink
 
@@ -128,14 +121,11 @@ contains
     integer :: j, k
 
     j = i
-    do while (j > 1)
+    k = j / 2
+    do while (k > 0 .and. q%heap(j)%priority < q%heap(k)%priority)
+      call swap(q,j,k)
+      j = k
       k = j / 2
-      if (q%heap(j)%priority < q%heap(k)%priority) then
-        call swap(q,j,k)
-        j = k
-      else
-        exit
-      end if
     end do
   end subroutine swim
 
