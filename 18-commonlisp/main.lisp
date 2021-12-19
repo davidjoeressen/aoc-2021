@@ -24,13 +24,13 @@
       x))
 
 (defun split (x)
-  (if (listp x)
-      (let ((left (split (car x))))
-        (cons left
-              (if (equal left (car x))
-                  (split (cdr x))
-                  (cdr x))))
-      (if (< x 10) x (cons (floor (/ x 2)) (ceiling (/ x 2))))))
+  (if (not (listp x))
+      (if (< x 10) (cons x nil) (cons (cons (floor (/ x 2)) (ceiling (/ x 2))) t))
+      (let* ((left (split (car x)))
+             (right (if (cdr left)
+                        (cons (cdr x) t)
+                        (split (cdr x)))))
+        (cons (cons (car left) (car right)) (cdr right)))))
 
 (defun add-right (n x)
   (if (not (listp x))
@@ -76,7 +76,9 @@
     (if (cadr ex)
         (red (car ex))
         (let ((spl (split x)))
-          (if (equal spl x) spl (red spl))))))
+          (if (cdr spl)
+              (red (car spl))
+              (car spl))))))
 
 (defun add (a b)
   (red (cons a b)))
