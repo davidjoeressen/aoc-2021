@@ -5,11 +5,6 @@
 (defn parse-line [line]
   (mapv #(Integer/parseInt %) (str/split line #",")))
 
-(defn all-relative-edges [verts]
-  (->> verts
-       (mapcat (fn [x] (map (fn [y] (map - x y)) verts)))
-       (filter #(not (every? zero? %)))))
-
 (defn matrix-multiplication [m1 m2]
   (mapv #(apply + (mapv * m2 %)) m1))
 
@@ -52,27 +47,23 @@
 (defn translate [verts tr]
   (map #(mapv + tr %) verts))
 
-(defn get-matches [x xs]
+(defn get-match [x xs]
   (let [candidates (map #(overlapping-rotation x %) xs)
         hits (filter second candidates)
         misses (filter #(nil? (second %)) candidates)]
     (list hits (map first misses))))
 
-(defn first-matches [done todo]
-  (->> done
-       (map #(get-matches % todo))
-       (filter #(seq (first %)))
-       (first)))
-
 (defn match-up [scanners]
-  (loop [done (list (first scanners))
+  (loop [queue (list (first scanners))
          beacons '([0 0 0])
+         done '()
          todo (rest scanners)]
-    (if (empty? todo)
+    (if (empty? queue)
       (list done beacons)
-      (let [match (first-matches done todo)]
-        (recur (concat done (map (partial apply translate) (first match)))
+      (let [match (get-match (first queue) todo)]
+        (recur (concat (rest queue) (map (partial apply translate) (first match)))
                (concat beacons (map second (first match)))
+               (conj done (first queue))
                (second match))))))
 
 (defn distance [x y]
