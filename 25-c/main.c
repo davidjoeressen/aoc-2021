@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
 	size_t i = 0, j = 0;
 	readfile(board, &i, &j, argv[1]);
 	unsigned int solution = solve(board, i, j);
-	printf("Part 1: %u\n", p1);
+	printf("Solution: %u\n", solution);
 
 	exit(EXIT_SUCCESS);
 }
